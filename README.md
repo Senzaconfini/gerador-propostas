@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gerador de Propostas com IA
+### Clube Divos da IA — Amanda Diniz
 
-## Getting Started
+Sistema para gerar propostas comerciais personalizadas usando Claude, com base no contexto de conversa do lead e nos serviços da sua agência.
 
-First, run the development server:
+---
 
+## Setup em 5 passos
+
+### 1. Clonar o repositório
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/seu-usuario/gerador-propostas.git
+cd gerador-propostas
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Criar projeto no Supabase (gratuito)
+1. Acesse supabase.com e crie uma conta
+2. Clique em **New Project**
+3. Dê um nome (ex: `gerador-propostas`) e crie
+4. Vá em **SQL Editor** e cole o conteúdo de `supabase/schema.sql`
+5. Clique em **Run**
+6. Vá em **Project Settings > API** e copie a URL e a chave `anon public`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Configurar variáveis de ambiente
+```bash
+cp .env.example .env.local
+```
+Preencha as 3 variáveis obrigatórias no `.env.local`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Rodar localmente
+```bash
+npm run dev
+```
+Abra http://localhost:3000
 
-## Learn More
+### 5. Deploy no Vercel
+```bash
+npx vercel
+```
+Ou conecte o repositório GitHub no vercel.com e configure as variáveis lá.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Como usar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Primeiro uso:** vá em **Configurar** e preencha os dados da sua agência e serviços.
 
-## Deploy on Vercel
+**Gerar proposta:**
+1. Novo Lead → preencha os dados
+2. Adicione contexto: conversa do WhatsApp, ata de reunião, notas
+3. Clique em **Gerar proposta com Claude**
+4. Visualize → Imprimir / Salvar PDF (Ctrl+P → Salvar como PDF)
+5. Envie pelo WhatsApp
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## UAZAPI (opcional)
+
+Para envio automático via WhatsApp, adicione ao `.env.local`:
+```
+UAZAPI_BASE_URL=https://sua-instancia.uazapi.com
+UAZAPI_INSTANCE_TOKEN=seu-token
+```
+
+---
+
+## Personalizar identidade visual
+
+Edite as cores em `app/globals.css` — o Claude usa essas cores ao gerar a proposta.
+
+---
+
+## Stack
+Next.js 15 · Supabase · Claude API · UAZAPI (opcional)
