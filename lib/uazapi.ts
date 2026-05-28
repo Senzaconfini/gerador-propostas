@@ -51,11 +51,11 @@ export async function fetchChat(numero: string, maxMessages = 500): Promise<stri
 export async function enviarMensagem(numero: string, texto: string): Promise<void> {
   if (!uazapiAtivo()) throw new Error('UAZAPI não configurado')
 
-  const phone = numero.replace(/\D/g, '')
-  const res = await fetch(`${BASE_URL}/message/sendText`, {
+  const number = numero.replace(/\D/g, '')
+  const res = await fetch(`${BASE_URL}/send/text`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'token': TOKEN },
-    body: JSON.stringify({ phone, message: texto }),
+    body: JSON.stringify({ number, text: texto }),
   })
 
   if (!res.ok) {
