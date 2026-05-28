@@ -18,19 +18,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const mensagem = (config?.mensagem_padrao || 'Olá, [nome]! Preparei uma proposta para você. Segue em anexo!')
     .replace('[nome]', lead.nome)
 
+  // 1. Envia a mensagem de texto — obrigatório
   try {
-    // 1. Envia a mensagem de texto
     await enviarMensagem(lead.whatsapp, mensagem)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erro ao enviar mensagem'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 
-    // 2. Envia o HTML da proposta como arquivo
-    if (proposta?.html) {
+  // 2. Tenta enviar o HTML como arquivo — opcional, ignora falha silenciosamente
+  // (plano gratuito do UAZAPI não suporta envio de arquivos)
+  if (proposta?.html) {
+    try {
       const base64 = Buffer.from(proposta.html, 'utf-8').toString('base64')
       const filename = `proposta-${(lead.empresa || lead.nome).replace(/\s+/g, '-').toLowerCase()}.html`
       await enviarArquivo(lead.whatsapp, base64, filename)
+    } catch {
+      // silencioso — arquivo não enviado, mas mensagem de texto foi
     }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Erro ao enviar'
-    return NextResponse.json({ error: msg }, { status: 500 })
   }
 
   // Marcar como enviada
