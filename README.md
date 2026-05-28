@@ -39,23 +39,31 @@ npm install
 ```bash
 cp .env.example .env.local
 ```
-Abra `.env.local` e preencha as variáveis. Para abrir no terminal:
+Abra o arquivo `.env.local` que foi criado. No Mac, pelo terminal:
 ```bash
 open -e .env.local
 ```
+O arquivo já tem instruções em cada campo — preencha um por um:
+- **APP_PASSWORD** → senha que você vai usar para entrar no app (escolha qualquer uma)
+- **ANTHROPIC_API_KEY** → chave do Claude API (console.anthropic.com)
+- **GROQ_API_KEY** → chave do Groq (console.groq.com)
+- **NEXT_PUBLIC_SUPABASE_URL**, **ANON_KEY**, **SERVICE_ROLE_KEY** → do seu projeto no Supabase
+- **UAZAPI_INSTANCE_TOKEN** → opcional, deixe em branco se não for usar
 
-### 6. Definir sua senha de acesso
-No `.env.local`, defina:
-```
-APP_PASSWORD=sua-senha-aqui
-```
-Essa senha protege o acesso ao app. Mude para algo que só você saiba.
+Salve o arquivo quando terminar.
 
-### 7. Rodar localmente
+### 6. Rodar o app localmente
+
+> **Importante:** esse comando precisa ser rodado no **Terminal do seu computador**, não no Claude Code.
+
+Abra o Terminal, entre na pasta do projeto e rode:
 ```bash
+cd gerador-propostas
 npm run dev
 ```
-Abra http://localhost:3000 e faça login com a senha definida.
+O terminal vai ficar rodando — isso é normal. Abra o navegador em http://localhost:3000 e entre com a senha que você definiu no `APP_PASSWORD`.
+
+Para parar o servidor: **Ctrl+C** no terminal.
 
 ### 8. Deploy no Vercel (opcional)
 ```bash
