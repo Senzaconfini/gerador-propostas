@@ -50,6 +50,10 @@ function LoginForm() {
             value={senha}
             onChange={e => setSenha(e.target.value)}
             autoFocus
+            autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             style={{ marginBottom: 12, textAlign: 'center', letterSpacing: '0.2em' }}
           />
           {erro && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{erro}</p>}
