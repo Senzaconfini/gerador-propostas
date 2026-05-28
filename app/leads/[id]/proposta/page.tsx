@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase, type Lead, type Proposta } from '@/lib/supabase'
-import { ArrowLeft, Printer, Send, RefreshCw, CheckCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Printer, Send, RefreshCw, CheckCircle, Sparkles, ChevronDown, ChevronUp, Download } from 'lucide-react'
 import Link from 'next/link'
 
 export default function PropostaPage() {
@@ -105,6 +105,17 @@ export default function PropostaPage() {
           </button>
           <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => window.print()}>
             <Printer size={13} /> Salvar PDF
+          </button>
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => {
+            const blob = new Blob([proposta?.html ?? ''], { type: 'text/html;charset=utf-8' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `proposta-${lead?.empresa || lead?.nome || 'lead'}.html`
+            a.click()
+            URL.revokeObjectURL(url)
+          }}>
+            <Download size={13} /> Baixar HTML
           </button>
           {uazapiAtivo ? (
             enviado ? (
