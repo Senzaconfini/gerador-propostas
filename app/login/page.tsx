@@ -20,7 +20,7 @@ function LoginForm() {
       body: JSON.stringify({ senha }),
     })
     if (res.ok) {
-      router.push(params.get('from') || '/')
+      window.location.href = params.get('from') || '/'
     } else {
       setErro('Senha incorreta')
       setLoading(false)
