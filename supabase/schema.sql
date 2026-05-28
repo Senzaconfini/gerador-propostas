@@ -74,6 +74,12 @@ alter table lead_contexto enable row level security;
 alter table propostas enable row level security;
 
 -- Bloqueia tudo para a anon key (acesso direto pelo browser)
+drop policy if exists "deny anon" on config;
+drop policy if exists "deny anon" on servicos;
+drop policy if exists "deny anon" on leads;
+drop policy if exists "deny anon" on lead_contexto;
+drop policy if exists "deny anon" on propostas;
+
 create policy "deny anon" on config for all to anon using (false);
 create policy "deny anon" on servicos for all to anon using (false);
 create policy "deny anon" on leads for all to anon using (false);
@@ -81,6 +87,12 @@ create policy "deny anon" on lead_contexto for all to anon using (false);
 create policy "deny anon" on propostas for all to anon using (false);
 
 -- Permite tudo para o service_role (usado pelo servidor Next.js)
+drop policy if exists "allow service" on config;
+drop policy if exists "allow service" on servicos;
+drop policy if exists "allow service" on leads;
+drop policy if exists "allow service" on lead_contexto;
+drop policy if exists "allow service" on propostas;
+
 create policy "allow service" on config for all to service_role using (true) with check (true);
 create policy "allow service" on servicos for all to service_role using (true) with check (true);
 create policy "allow service" on leads for all to service_role using (true) with check (true);
