@@ -11,6 +11,12 @@ export async function GET(req: NextRequest) {
   const numero = req.nextUrl.searchParams.get('numero')
   if (!numero) return NextResponse.json({ error: 'Número obrigatório' }, { status: 400 })
 
-  const transcript = await fetchChat(numero)
-  return NextResponse.json({ transcript })
+  try {
+    const transcript = await fetchChat(numero)
+    return NextResponse.json({ transcript })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[UAZAPI route error]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }

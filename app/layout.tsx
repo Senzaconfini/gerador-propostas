@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
+import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
   title: 'Gerador de Propostas — Clube Divos da IA',
@@ -11,10 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body>
-        <Sidebar />
-        <main style={{ marginLeft: 220, minHeight: '100vh', padding: '40px 48px' }}>
-          {children}
-        </main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   )

@@ -12,10 +12,13 @@ export default function LeadDetailPage() {
   const [ctx, setCtx] = useState<Partial<LeadContexto>>({ conversa: '', reuniao: '', audio_transcrito: '', notas_extras: '' })
   const [saving, setSaving] = useState(false)
   const [gerando, setGerando] = useState(false)
+  const [erroGerar, setErroGerar] = useState('')
   const [puxando, setPuxando] = useState(false)
   const [uazapiAtivo, setUazapiAtivo] = useState(false)
   const [tab, setTab] = useState<'conversa' | 'reuniao' | 'audio' | 'notas'>('conversa')
   const reuniaoRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLInputElement>(null)
+  const [transcrevendo, setTranscrevendo] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -43,10 +46,16 @@ export default function LeadDetailPage() {
   async function puxarConversa() {
     if (!lead?.whatsapp) return
     setPuxando(true)
-    const res = await fetch(`/api/uazapi/fetch?numero=${lead.whatsapp}`)
-    const data = await res.json()
-    if (data.transcript) setCtx(p => ({ ...p, conversa: data.transcript }))
-    setPuxando(false)
+    try {
+      const res = await fetch(`/api/uazapi/fetch?numero=${lead.whatsapp}`)
+      const data = await res.json()
+      if (data.transcript) setCtx(p => ({ ...p, conversa: data.transcript }))
+      else if (data.error) alert(`UAZAPI: ${data.error}`)
+    } catch {
+      alert('Erro ao conectar com UAZAPI. Verifique se a instância ainda está ativa.')
+    } finally {
+      setPuxando(false)
+    }
   }
 
   async function handleUploadArquivo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -62,11 +71,14 @@ export default function LeadDetailPage() {
   async function gerarProposta() {
     await salvarContexto()
     setGerando(true)
+    setErroGerar('')
     const res = await fetch(`/api/leads/${id}/gerar`, { method: 'POST' })
     const data = await res.json()
     setGerando(false)
     if (data.propostaId) {
       router.push(`/leads/${id}/proposta`)
+    } else if (data.error) {
+      setErroGerar(data.error)
     }
   }
 
@@ -118,6 +130,12 @@ export default function LeadDetailPage() {
           </button>
         </div>
       </div>
+
+      {erroGerar && (
+        <div style={{ background: 'rgba(116,30,49,0.15)', border: '1px solid rgba(116,30,49,0.4)', borderRadius: 8, padding: '12px 16px', marginBottom: 24, color: 'var(--blush)', fontSize: 13, lineHeight: 1.6 }}>
+          ⚠️ {erroGerar}
+        </div>
+      )}
 
       {/* Contexto do lead */}
       <div className="card">
@@ -175,14 +193,25 @@ export default function LeadDetailPage() {
         {/* Tab: Áudio Transcrito */}
         {tab === 'audio' && (
           <div>
-            <div className="card" style={{ background: 'var(--surface2)', marginBottom: 16, padding: 16 }}>
-              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
-                {uazapiAtivo
-                  ? '✓ UAZAPI ativo — áudios do WhatsApp são transcritos automaticamente ao puxar a conversa.'
-                  : 'Para transcrição automática de áudios do WhatsApp, configure o UAZAPI no .env.'}
-              </p>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => audioRef.current?.click()} disabled={transcrevendo}>
+                <Mic size={13} /> {transcrevendo ? 'Transcrevendo...' : 'Enviar áudio para transcrever'}
+              </button>
+              <input ref={audioRef} type="file" accept="audio/*,.ogg,.oga,.mp3,.wav,.m4a,.webm,.opus" style={{ display: 'none' }}
+                onChange={async e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setTranscrevendo(true)
+                  const form = new FormData()
+                  form.append('file', file)
+                  const res = await fetch('/api/transcrever-audio', { method: 'POST', body: form })
+                  const data = await res.json()
+                  if (data.texto) setCtx(p => ({ ...p, audio_transcrito: (p.audio_transcrito ? p.audio_transcrito + '\n\n' : '') + data.texto }))
+                  setTranscrevendo(false)
+                  e.target.value = ''
+                }} />
             </div>
-            <label className="label">Cole aqui a transcrição do áudio</label>
+            <label className="label">Transcrição do áudio</label>
             <textarea className="input" rows={10} placeholder="Transcrição do áudio do lead..."
               value={ctx.audio_transcrito || ''} onChange={e => setCtx(p => ({ ...p, audio_transcrito: e.target.value }))} />
           </div>

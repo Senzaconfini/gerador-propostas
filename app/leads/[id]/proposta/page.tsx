@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase, type Lead, type Proposta } from '@/lib/supabase'
-import { ArrowLeft, Printer, Send, RefreshCw, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Printer, Send, RefreshCw, CheckCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 
 export default function PropostaPage() {
@@ -14,6 +14,9 @@ export default function PropostaPage() {
   const [enviado, setEnviado] = useState(false)
   const [uazapiAtivo, setUazapiAtivo] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
+  const [instrucao, setInstrucao] = useState('')
+  const [refinando, setRefinando] = useState(false)
+  const [painelAberto, setPainelAberto] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -37,8 +40,29 @@ export default function PropostaPage() {
     else { setErroEnvio(data.error || 'Erro ao enviar') }
   }
 
-  function imprimir() {
-    window.print()
+  async function refinarProposta() {
+    if (!instrucao.trim()) return
+    setRefinando(true)
+    const res = await fetch('/api/leads/refinar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId: id, instrucao }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      // Recarrega proposta atualizada
+      const { data: p } = await supabase
+        .from('propostas')
+        .select('*')
+        .eq('lead_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (p) setProposta(p)
+      setInstrucao('')
+      setPainelAberto(false)
+    }
+    setRefinando(false)
   }
 
   if (loading) return <div style={{ color: 'var(--muted)', paddingTop: 40 }}>Carregando proposta...</div>
@@ -56,7 +80,7 @@ export default function PropostaPage() {
 
   return (
     <>
-      {/* Barra de ações — só aparece na tela, não no print */}
+      {/* Barra de ações */}
       <div className="no-print" style={{
         position: 'fixed', top: 0, left: 220, right: 0, zIndex: 100,
         background: 'var(--surface)', borderBottom: '1px solid var(--border)',
@@ -67,16 +91,20 @@ export default function PropostaPage() {
             <ArrowLeft size={14} /> {lead?.nome}
           </Link>
           <span style={{ color: 'var(--border)' }}>·</span>
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Proposta gerada em {new Date(proposta.created_at).toLocaleDateString('pt-BR')}</span>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Gerada em {new Date(proposta.created_at).toLocaleDateString('pt-BR')}</span>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Link href={`/leads/${id}`}>
-            <button className="btn btn-ghost" style={{ fontSize: 13, gap: 6 }}>
-              <RefreshCw size={13} /> Regerar
+            <button className="btn btn-ghost" style={{ fontSize: 13 }}>
+              <RefreshCw size={13} /> Regerar do zero
             </button>
           </Link>
-          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={imprimir}>
-            <Printer size={13} /> Imprimir / Salvar PDF
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => setPainelAberto(v => !v)}>
+            <Sparkles size={13} /> Refinar
+            {painelAberto ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => window.print()}>
+            <Printer size={13} /> Salvar PDF
           </button>
           {uazapiAtivo ? (
             enviado ? (
@@ -85,34 +113,63 @@ export default function PropostaPage() {
               </div>
             ) : (
               <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={enviarWhatsApp} disabled={enviando}>
-                {enviando ? 'Enviando...' : <><Send size={13} /> Enviar via WhatsApp</>}
+                {enviando ? 'Enviando...' : <><Send size={13} /> Enviar WhatsApp</>}
               </button>
             )
-          ) : (
-            <div style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 200, textAlign: 'right', lineHeight: 1.4 }}>
-              Configure UAZAPI no .env para envio automático
-            </div>
-          )}
+          ) : null}
         </div>
         {erroEnvio && <div style={{ position: 'absolute', bottom: -32, right: 48, fontSize: 12, color: '#f87171' }}>{erroEnvio}</div>}
       </div>
 
-      {/* Proposta — preview + versão de impressão */}
-      <div style={{ paddingTop: 64 }}>
+      {/* Painel de refinamento */}
+      {painelAberto && (
+        <div className="no-print" style={{
+          position: 'fixed', top: 53, left: 220, right: 0, zIndex: 99,
+          background: 'var(--surface2)', borderBottom: '1px solid var(--border)',
+          padding: '16px 48px', display: 'flex', gap: 12, alignItems: 'flex-start',
+        }}>
+          <div style={{ flex: 1 }}>
+            <label className="label" style={{ marginBottom: 6 }}>O que você quer mudar na proposta?</label>
+            <textarea
+              className="input"
+              rows={2}
+              style={{ minHeight: 'unset', resize: 'none', fontSize: 13 }}
+              placeholder='Ex: "Mude o valor do serviço de gestão para R$ 2.000" ou "Adicione uma seção de depoimentos" ou "Troque o tom para mais informal"'
+              value={instrucao}
+              onChange={e => setInstrucao(e.target.value)}
+            />
+          </div>
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: 22, whiteSpace: 'nowrap' }}
+            onClick={refinarProposta}
+            disabled={refinando || !instrucao.trim()}
+          >
+            {refinando ? (
+              <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} /> Refinando...</>
+            ) : (
+              <><Sparkles size={14} /> Aplicar alteração</>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Proposta */}
+      <div style={{ paddingTop: painelAberto ? 140 : 64 }}>
         <div
           id="proposta-html"
           dangerouslySetInnerHTML={{ __html: proposta.html }}
-          style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}
+          style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}
         />
       </div>
 
       <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media print {
           .no-print { display: none !important; }
           aside { display: none !important; }
           main { margin-left: 0 !important; padding: 0 !important; }
           #proposta-html { box-shadow: none !important; border-radius: 0 !important; }
-          body { background: white !important; }
         }
       `}</style>
     </>

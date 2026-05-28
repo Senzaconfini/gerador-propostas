@@ -66,18 +66,18 @@ export default function ConfigurarPage() {
         <p style={{ color: 'var(--muted)' }}>Essas informações são usadas pelo Claude para gerar propostas personalizadas.</p>
       </div>
 
-      {/* Agência */}
+      {/* Empresa */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div className="section-label">Dados da agência</div>
+        <div className="section-label">Dados da empresa</div>
 
         <div style={{ marginBottom: 16 }}>
-          <label className="label">Nome da agência *</label>
-          <input className="input" placeholder="Ex: Agência Furtacor" value={config.agencia_nome || ''} onChange={e => setConfig(p => ({ ...p, agencia_nome: e.target.value }))} />
+          <label className="label">Nome da empresa *</label>
+          <input className="input" placeholder="Ex: Furtacor, Studio Silva, Consultoria XYZ..." value={config.agencia_nome || ''} onChange={e => setConfig(p => ({ ...p, agencia_nome: e.target.value }))} />
         </div>
 
         <div style={{ marginBottom: 16 }}>
           <label className="label">Descrição (o que você faz)</label>
-          <textarea className="input" rows={3} placeholder="Ex: Agência especializada em social media e tráfego pago para negócios locais..." value={config.agencia_descricao || ''} onChange={e => setConfig(p => ({ ...p, agencia_descricao: e.target.value }))} />
+          <textarea className="input" rows={3} placeholder="Ex: Especializada em social media e tráfego pago para negócios locais..." value={config.agencia_descricao || ''} onChange={e => setConfig(p => ({ ...p, agencia_descricao: e.target.value }))} />
         </div>
 
         <div style={{ marginBottom: 16 }}>
