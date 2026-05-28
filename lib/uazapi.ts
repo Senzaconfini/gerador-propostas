@@ -68,10 +68,14 @@ export async function enviarArquivo(numero: string, base64: string, filename: st
   if (!uazapiAtivo()) throw new Error('UAZAPI não configurado')
 
   const number = numero.replace(/\D/g, '')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload: Record<string, any> = { number, base64, filename }
+  if (caption) payload.caption = caption
+
   const res = await fetch(`${BASE_URL}/send/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'token': TOKEN },
-    body: JSON.stringify({ number, base64, filename, caption }),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
