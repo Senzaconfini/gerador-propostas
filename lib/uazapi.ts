@@ -67,10 +67,15 @@ export async function enviarMensagem(numero: string, texto: string): Promise<voi
 export async function enviarArquivo(numero: string, base64: string, filename: string, caption = ''): Promise<void> {
   if (!uazapiAtivo()) throw new Error('UAZAPI não configurado')
 
-  const phone = numero.replace(/\D/g, '')
-  await fetch(`${BASE_URL}/message/sendFile`, {
+  const number = numero.replace(/\D/g, '')
+  const res = await fetch(`${BASE_URL}/send/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'token': TOKEN },
-    body: JSON.stringify({ phone, base64, filename, caption }),
+    body: JSON.stringify({ number, base64, filename, caption }),
   })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`UAZAPI erro ${res.status}: ${body.slice(0, 200)}`)
+  }
 }

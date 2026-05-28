@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { enviarMensagem, uazapiAtivo } from '@/lib/uazapi'
+import { enviarMensagem, enviarArquivo, uazapiAtivo } from '@/lib/uazapi'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   if (!uazapiAtivo()) return NextResponse.json({ error: 'UAZAPI não configurado' }, { status: 400 })
 
-  const [{ data: lead }, { data: config }] = await Promise.all([
+  const [{ data: lead }, { data: config }, { data: proposta }] = await Promise.all([
     supabase.from('leads').select('*').eq('id', id).single(),
     supabase.from('config').select('mensagem_padrao').single(),
+    supabase.from('propostas').select('html').eq('lead_id', id).order('created_at', { ascending: false }).limit(1).single(),
   ])
 
   if (!lead?.whatsapp) return NextResponse.json({ error: 'Lead sem WhatsApp cadastrado' }, { status: 400 })
@@ -18,9 +19,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .replace('[nome]', lead.nome)
 
   try {
+    // 1. Envia a mensagem de texto
     await enviarMensagem(lead.whatsapp, mensagem)
+
+    // 2. Envia o HTML da proposta como arquivo
+    if (proposta?.html) {
+      const base64 = Buffer.from(proposta.html, 'utf-8').toString('base64')
+      const filename = `proposta-${(lead.empresa || lead.nome).replace(/\s+/g, '-').toLowerCase()}.html`
+      await enviarArquivo(lead.whatsapp, base64, filename)
+    }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Erro ao enviar mensagem'
+    const msg = err instanceof Error ? err.message : 'Erro ao enviar'
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 
