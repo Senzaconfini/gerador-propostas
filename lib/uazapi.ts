@@ -52,11 +52,16 @@ export async function enviarMensagem(numero: string, texto: string): Promise<voi
   if (!uazapiAtivo()) throw new Error('UAZAPI não configurado')
 
   const phone = numero.replace(/\D/g, '')
-  await fetch(`${BASE_URL}/message/sendText`, {
+  const res = await fetch(`${BASE_URL}/message/sendText`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'token': TOKEN },
     body: JSON.stringify({ phone, message: texto }),
   })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`UAZAPI erro ${res.status}: ${body.slice(0, 200)}`)
+  }
 }
 
 export async function enviarArquivo(numero: string, base64: string, filename: string, caption = ''): Promise<void> {

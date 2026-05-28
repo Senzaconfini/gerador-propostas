@@ -17,7 +17,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const mensagem = (config?.mensagem_padrao || 'Olá, [nome]! Preparei uma proposta para você. Segue em anexo!')
     .replace('[nome]', lead.nome)
 
-  await enviarMensagem(lead.whatsapp, mensagem)
+  try {
+    await enviarMensagem(lead.whatsapp, mensagem)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Erro ao enviar mensagem'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 
   // Marcar como enviada
   await supabase.from('leads').update({ status: 'proposta_enviada', updated_at: new Date().toISOString() }).eq('id', id)
