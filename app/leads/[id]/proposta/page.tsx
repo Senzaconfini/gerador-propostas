@@ -43,20 +43,27 @@ export default function PropostaPage() {
   async function refinarProposta() {
     if (!instrucao.trim()) return
     setRefinando(true)
-    const res = await fetch('/api/leads/refinar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId: id, instrucao }),
-    })
-    const data = await res.json()
-    if (data.ok) {
-      // Recarrega proposta atualizada
-      const { proposta: p } = await fetch(`/api/leads/${id}/proposta`).then(r => r.json())
-      if (p) setProposta(p)
-      setInstrucao('')
-      setPainelAberto(false)
+    try {
+      const res = await fetch('/api/leads/refinar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: id, instrucao }),
+      })
+      const data = await res.json().catch(() => ({ error: 'O refino demorou demais e foi interrompido. Tente novamente.' }))
+      if (data.ok) {
+        // Recarrega proposta atualizada
+        const { proposta: p } = await fetch(`/api/leads/${id}/proposta`).then(r => r.json())
+        if (p) setProposta(p)
+        setInstrucao('')
+        setPainelAberto(false)
+      } else {
+        alert(data.error || 'Erro ao refinar a proposta.')
+      }
+    } catch {
+      alert('Não foi possível refinar (tempo esgotado ou conexão). Tente novamente.')
+    } finally {
+      setRefinando(false)
     }
-    setRefinando(false)
   }
 
   if (loading) return <div style={{ color: 'var(--muted)', paddingTop: 40 }}>Carregando proposta...</div>

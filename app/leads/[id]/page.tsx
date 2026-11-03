@@ -75,13 +75,18 @@ export default function LeadDetailPage() {
     await salvarContexto()
     setGerando(true)
     setErroGerar('')
-    const res = await fetch(`/api/leads/${id}/gerar`, { method: 'POST' })
-    const data = await res.json()
-    setGerando(false)
-    if (data.propostaId) {
-      router.push(`/leads/${id}/proposta`)
-    } else if (data.error) {
-      setErroGerar(data.error)
+    try {
+      const res = await fetch(`/api/leads/${id}/gerar`, { method: 'POST' })
+      const data = await res.json().catch(() => ({ error: 'A geração demorou demais e foi interrompida. Tente gerar novamente.' }))
+      if (data.propostaId) {
+        router.push(`/leads/${id}/proposta`)
+      } else {
+        setErroGerar(data.error || 'Erro ao gerar proposta. Tente novamente.')
+      }
+    } catch {
+      setErroGerar('Não foi possível gerar a proposta (tempo esgotado ou conexão). Tente novamente.')
+    } finally {
+      setGerando(false)
     }
   }
 
