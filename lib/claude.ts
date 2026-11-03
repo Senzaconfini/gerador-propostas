@@ -16,7 +16,7 @@ export async function gerarProposta(params: {
 
   const servicosTexto = servicos
     .filter(s => s.ativo)
-    .map(s => `- ${s.nome}: R$ ${s.preco}/${s.unidade}${s.descricao ? ` — ${s.descricao}` : ''}`)
+    .map(s => `- ${s.nome}: ${s.preco}/${s.unidade}${s.descricao ? ` — ${s.descricao}` : ''}`)
     .join('\n')
 
   const contextoLead = [
@@ -51,27 +51,27 @@ FORMATO HTML — REGRAS OBRIGATÓRIAS:
 - Retorne APENAS o conteúdo que vai dentro de <body>, começando com uma tag <style>
 - NÃO inclua <!DOCTYPE>, <html>, <head> ou <body> tags
 - Todo CSS deve estar dentro da tag <style> no início (não use style="" inline nos elementos)
-- Fontes via Google Fonts: Playfair Display (títulos) e Inter (corpo)
+- Fontes via Google Fonts: Newsreader (títulos e display) e Archivo (corpo e rótulos). Importe ambas no início do <style>: @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600;700&display=swap');
 
-PALETA DE CORES — USE EXATAMENTE ESTAS:
-- Fundo principal: #070D0D (quase preto)
-- Superfície cards: #111818
-- Superfície secundária: #1A2020
-- Texto principal: #FFF7EC (creme)
-- Destaque rosa: #F5CBD7 (blush)
-- Acento: #C4908E (rose gold)
-- Botões/bordas: #741E31 (berry)
-- Escuro quente: #3E2723 (espresso)
+PALETA DE CORES — USE EXATAMENTE ESTAS (identidade Senza Confini):
+- Fundo principal: #141714 (quase preto esverdeado)
+- Superfície cards: #1C241C
+- Verde da marca: #1E3320
+- Verde da capa (fundo da capa, onde entra a logo): #223522
+- Texto principal: #E8E0D0 (creme)
+- Dourado (acento, títulos de destaque, números, linhas finas): #B89A5A
+- Verde digital (acento secundário): #80A880
 
 REGRAS DE DESIGN CRÍTICAS:
-1. TODOS os elementos devem ter fundo escuro (#070D0D ou #111818 ou #1A2020) — NUNCA fundo branco ou claro
-2. TODO o texto deve ser claro (#FFF7EC ou #F5CBD7 ou #C4908E) — NUNCA texto escuro em fundo claro
-3. No início do <style>, SEMPRE inclua: * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-4. Defina background-color: #070D0D no body e em TODAS as seções
-5. Use page-break-after: always para separar seções como páginas distintas no PDF
+1. TODOS os elementos devem ter fundo escuro (#141714, #1C241C ou #1E3320) — NUNCA fundo branco ou claro
+2. TODO o texto deve ser claro (#E8E0D0) ou dourado (#B89A5A) — NUNCA texto escuro em fundo claro
+3. Use o dourado #B89A5A como cor de destaque com elegância e sem exagero: títulos de seção, números do investimento, linhas finas e detalhes
+4. No início do <style>, SEMPRE inclua: * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+5. Defina background-color: #141714 no body e em TODAS as seções, EXCETO a CAPA, que usa #223522
+6. Use page-break-after: always para separar seções como páginas distintas no PDF
 
 ESTRUTURA OBRIGATÓRIA — TODAS AS 6 SEÇÕES DEVEM ESTAR PRESENTES:
-1. CAPA — nome do lead, empresa, título da proposta, data
+1. CAPA — fundo verde #223522 ocupando a página inteira. No topo, centralizada, a LOGO da Senza: <img src="/senza-logo.jpg" alt="Senza Confini" style="width:150px;height:150px;border-radius:50%;display:block;margin:0 auto 32px;" />. Como a logo já tem o fundo verde #223522, ela se integra sem emenda a esse mesmo verde. Abaixo da logo: o nome "Senza Confini" em Newsreader, o título da proposta, o nome do lead e da empresa, e a data
 2. O QUE ENTENDEMOS — dores e contexto identificados na conversa
 3. O QUE VAMOS FAZER — serviços selecionados com descrição detalhada
 4. INVESTIMENTO — tabela com os serviços escolhidos e valores, total mensal/projeto
@@ -81,7 +81,7 @@ ESTRUTURA OBRIGATÓRIA — TODAS AS 6 SEÇÕES DEVEM ESTAR PRESENTES:
 NUNCA omita a seção de INVESTIMENTO com os valores. Ela é obrigatória.
 
 CADA SEÇÃO deve ter:
-- background-color explícito (#070D0D ou variação escura)
+- background-color explícito (#141714 ou variação escura; a CAPA usa #223522)
 - padding mínimo de 60px
 - min-height: 100vh para ocupar a página inteira no PDF`
 
