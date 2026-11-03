@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, type Lead, type LeadContexto } from '@/lib/supabase'
+import { type Lead, type LeadContexto } from '@/lib/supabase'
 import { ArrowLeft, Download, Wand2, MessageSquare, FileText, Mic, StickyNote, Phone } from 'lucide-react'
 import Link from 'next/link'
 
@@ -21,25 +21,28 @@ export default function LeadDetailPage() {
   const [transcrevendo, setTranscrevendo] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('leads').select('*').eq('id', id).single(),
-      supabase.from('lead_contexto').select('*').eq('lead_id', id).single(),
-    ]).then(([{ data: l }, { data: c }]) => {
-      if (l) setLead(l)
-      if (c) setCtx(c)
-    })
+    fetch(`/api/leads/${id}`)
+      .then(r => r.json())
+      .then(({ lead: l, contexto: c }) => {
+        if (l) setLead(l)
+        if (c) setCtx(c)
+      })
     // Checar UAZAPI
     fetch('/api/uazapi/fetch', { method: 'HEAD' }).then(r => setUazapiAtivo(r.ok))
   }, [id])
 
   async function salvarContexto() {
     setSaving(true)
-    const { data: existing } = await supabase.from('lead_contexto').select('id').eq('lead_id', id).single()
-    if (existing?.id) {
-      await supabase.from('lead_contexto').update({ ...ctx, updated_at: new Date().toISOString() }).eq('id', existing.id)
-    } else {
-      await supabase.from('lead_contexto').insert({ ...ctx, lead_id: id })
-    }
+    await fetch(`/api/leads/${id}/contexto`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversa: ctx.conversa || '',
+        reuniao: ctx.reuniao || '',
+        audio_transcrito: ctx.audio_transcrito || '',
+        notas_extras: ctx.notas_extras || '',
+      }),
+    })
     setSaving(false)
   }
 

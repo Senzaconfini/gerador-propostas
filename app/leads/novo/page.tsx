@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,16 +13,14 @@ export default function NovoLeadPage() {
   async function criar() {
     if (!form.nome.trim()) { setErro('Nome é obrigatório'); return }
     setSaving(true)
-    const { data, error } = await supabase
-      .from('leads')
-      .insert({ ...form, status: 'novo' })
-      .select()
-      .single()
-    if (error || !data) { setErro('Erro ao criar lead. Tente novamente.'); setSaving(false); return }
-
-    // Cria contexto vazio para o lead
-    await supabase.from('lead_contexto').insert({ lead_id: data.id, conversa: '', reuniao: '', audio_transcrito: '', notas_extras: '' })
-    router.push(`/leads/${data.id}`)
+    const res = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    })
+    const data = await res.json()
+    if (!res.ok || !data.lead) { setErro('Erro ao criar lead. Tente novamente.'); setSaving(false); return }
+    router.push(`/leads/${data.lead.id}`)
   }
 
   return (

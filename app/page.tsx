@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { supabase, type Lead } from '@/lib/supabase'
+import { type Lead } from '@/lib/supabase'
 import { Plus, FileText, Send, Clock, ChevronRight } from 'lucide-react'
 
 const statusLabel: Record<string, { label: string; badge: string }> = {
@@ -15,11 +15,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { setLeads(data || []); setLoading(false) })
+    fetch('/api/leads')
+      .then(r => r.json())
+      .then(({ leads }) => { setLeads(leads || []); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   const counts = {

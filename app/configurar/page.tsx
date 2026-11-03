@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase, type Config, type Servico } from '@/lib/supabase'
+import { type Config, type Servico } from '@/lib/supabase'
 import { Plus, Trash2, Save, CheckCircle } from 'lucide-react'
 
 export default function ConfigurarPage() {
@@ -13,32 +13,23 @@ export default function ConfigurarPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('config').select('*').single(),
-      supabase.from('servicos').select('*').order('ordem'),
-    ]).then(([{ data: c }, { data: s }]) => {
-      if (c) setConfig(c)
-      setServicos(s || [])
-      setLoading(false)
-    })
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(({ config: c, servicos: s }) => {
+        if (c) setConfig(c)
+        setServicos(s || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
   async function salvar() {
     setSaving(true)
-    const { data: existing } = await supabase.from('config').select('id').single()
-    if (existing?.id) {
-      await supabase.from('config').update({ ...config, updated_at: new Date().toISOString() }).eq('id', existing.id)
-    } else {
-      await supabase.from('config').insert(config)
-    }
-    // Salvar serviços: deletar todos e reinserir
-    await supabase.from('servicos').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    const servicosParaSalvar = servicos
-      .filter(s => s.nome)
-      .map((s, i) => ({ nome: s.nome!, descricao: s.descricao || '', preco: s.preco || '0', unidade: s.unidade || 'mês', ordem: i, ativo: true }))
-    if (servicosParaSalvar.length > 0) {
-      await supabase.from('servicos').insert(servicosParaSalvar)
-    }
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config, servicos }),
+    })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)

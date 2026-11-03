@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase, type Lead, type Proposta } from '@/lib/supabase'
+import { type Lead, type Proposta } from '@/lib/supabase'
 import { ArrowLeft, Printer, Send, RefreshCw, CheckCircle, Sparkles, ChevronDown, ChevronUp, Download } from 'lucide-react'
 import Link from 'next/link'
 
@@ -19,14 +19,14 @@ export default function PropostaPage() {
   const [painelAberto, setPainelAberto] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('leads').select('*').eq('id', id).single(),
-      supabase.from('propostas').select('*').eq('lead_id', id).order('created_at', { ascending: false }).limit(1).single(),
-    ]).then(([{ data: l }, { data: p }]) => {
-      if (l) setLead(l)
-      if (p) setProposta(p)
-      setLoading(false)
-    })
+    fetch(`/api/leads/${id}/proposta`)
+      .then(r => r.json())
+      .then(({ lead: l, proposta: p }) => {
+        if (l) setLead(l)
+        if (p) setProposta(p)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
     fetch('/api/uazapi/fetch', { method: 'HEAD' }).then(r => setUazapiAtivo(r.ok))
   }, [id])
 
@@ -51,13 +51,7 @@ export default function PropostaPage() {
     const data = await res.json()
     if (data.ok) {
       // Recarrega proposta atualizada
-      const { data: p } = await supabase
-        .from('propostas')
-        .select('*')
-        .eq('lead_id', id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      const { proposta: p } = await fetch(`/api/leads/${id}/proposta`).then(r => r.json())
       if (p) setProposta(p)
       setInstrucao('')
       setPainelAberto(false)
