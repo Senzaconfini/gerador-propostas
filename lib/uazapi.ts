@@ -22,30 +22,55 @@ export async function fetchChat(numero: string, maxMessages = 500): Promise<stri
   if (!res.ok) throw new Error(`UAZAPI erro ${res.status}: ${text.slice(0, 200)}`)
 
   const data = JSON.parse(text)
+  // O array de mensagens pode vir em formatos diferentes dependendo da versão do UAZAPI
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const msgs: any[] = data.messages || []
-  msgs.sort((a, b) => (a.timestamp || a.messageTimestamp || 0) - (b.timestamp || b.messageTimestamp || 0))
+  const msgs: any[] =
+    Array.isArray(data)                 ? data :
+    Array.isArray(data.messages)        ? data.messages :
+    Array.isArray(data.data)            ? data.data :
+    Array.isArray(data.data?.messages)  ? data.data.messages :
+    Array.isArray(data.result)          ? data.result :
+    Array.isArray(data.records)         ? data.records :
+    []
 
-  return msgs
-    .map(m => {
-      const ts = m.messageTimestamp || m.timestamp
-      const dt = ts ? new Date(ts > 1e12 ? ts : ts * 1000).toLocaleString('pt-BR') : ''
-      const quem = m.fromMe ? 'Você' : 'Lead'
+  const getTs = (m: Record<string, unknown>): number =>
+    Number(m.messageTimestamp || m.timestamp || m.t ||
+      (m.key as Record<string, unknown>)?.timestamp || 0)
 
-      const tipo = m.messageType || ''
-      const texto =
-        m.text ||
-        (tipo.includes('Audio') ? '[áudio]' :
-         tipo.includes('Image') ? '[imagem]' :
-         tipo.includes('Video') ? '[vídeo]' :
-         tipo.includes('Document') ? '[documento]' :
-         tipo.includes('Sticker') ? '[sticker]' :
-         '[mídia]')
+  msgs.sort((a, b) => getTs(a) - getTs(b))
 
-      return `[${dt}] ${quem}: ${texto}`
-    })
-    .filter(l => !l.includes('] :'))
-    .join('\n')
+  const linhas = msgs.map(m => {
+    const tsRaw = getTs(m)
+    const dt = tsRaw ? new Date(tsRaw > 1e12 ? tsRaw : tsRaw * 1000).toLocaleString('pt-BR') : ''
+    const fromMe = m.fromMe ?? m.key?.fromMe ?? false
+    const quem = fromMe ? 'Você' : 'Lead'
+
+    const tipo = m.messageType || m.type || ''
+    const msgObj = m.message || {}
+    const texto =
+      m.text ||
+      m.body ||
+      m.caption ||
+      m.content ||
+      msgObj.conversation ||
+      msgObj.extendedTextMessage?.text ||
+      msgObj.imageMessage?.caption ||
+      msgObj.videoMessage?.caption ||
+      (String(tipo).toLowerCase().includes('audio') ? '[áudio]' :
+       String(tipo).toLowerCase().includes('image') ? '[imagem]' :
+       String(tipo).toLowerCase().includes('video') ? '[vídeo]' :
+       String(tipo).toLowerCase().includes('document') ? '[documento]' :
+       String(tipo).toLowerCase().includes('sticker') ? '[sticker]' :
+       '')
+
+    return texto ? `[${dt}] ${quem}: ${texto}` : ''
+  }).filter(Boolean)
+
+  // Devolve o transcript; se não houver nada reconhecível, sinaliza quantas mensagens brutas vieram
+  if (linhas.length === 0) {
+    return msgs.length > 0 ? `__RAW_COUNT__:${msgs.length}` : ''
+  }
+  return linhas.join('\n')
 }
 
 export async function enviarMensagem(numero: string, texto: string): Promise<void> {
