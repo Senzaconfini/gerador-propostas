@@ -46,6 +46,7 @@ export type Proposta = {
   id: string
   lead_id: string
   html: string
+  conteudo: unknown | null
   enviada: boolean
   enviada_em: string | null
   created_at: string

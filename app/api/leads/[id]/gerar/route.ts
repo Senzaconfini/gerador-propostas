@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { gerarProposta } from '@/lib/claude'
+import { gerarConteudoProposta } from '@/lib/claude'
+import { montarHtmlProposta } from '@/lib/template'
 
 export const maxDuration = 60
 
@@ -22,9 +23,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!lead) return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 })
   if (!config) return NextResponse.json({ error: 'Configure a empresa antes de gerar propostas' }, { status: 400 })
 
-  let html: string
   try {
-    html = await gerarProposta({
+    const conteudo = await gerarConteudoProposta({
       config,
       servicos: servicos || [],
       lead: { nome: lead.nome, empresa: lead.empresa, nicho: lead.nicho },
@@ -33,6 +33,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       audioTranscrito: ctx?.audio_transcrito || '',
       notasExtras:     ctx?.notas_extras    || '',
     })
+
+    const html = montarHtmlProposta(conteudo)
+
+    const { data: proposta } = await supabase
+      .from('propostas')
+      .insert({ lead_id: id, html, conteudo })
+      .select()
+      .single()
+
+    await supabase.from('leads').update({ status: 'proposta_gerada', updated_at: new Date().toISOString() }).eq('id', id)
+
+    return NextResponse.json({ propostaId: proposta?.id })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     const semCredito = msg.includes('credit') || msg.includes('billing') || msg.includes('quota') || msg.includes('insufficient')
@@ -42,16 +54,4 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         : `Erro ao gerar proposta: ${msg}`,
     }, { status: 500 })
   }
-
-  // Salvar proposta no banco
-  const { data: proposta } = await supabase
-    .from('propostas')
-    .insert({ lead_id: id, html })
-    .select()
-    .single()
-
-  // Atualizar status do lead
-  await supabase.from('leads').update({ status: 'proposta_gerada', updated_at: new Date().toISOString() }).eq('id', id)
-
-  return NextResponse.json({ propostaId: proposta?.id })
 }

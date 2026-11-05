@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { supabase } from '@/lib/supabase'
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+import { refinarConteudoProposta } from '@/lib/claude'
+import { montarHtmlProposta, type ConteudoProposta } from '@/lib/template'
 
 export const maxDuration = 60
 
@@ -19,26 +18,23 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!proposta) return NextResponse.json({ error: 'Proposta não encontrada' }, { status: 404 })
+  if (!proposta.conteudo) return NextResponse.json({
+    error: 'Essa proposta foi gerada em um formato antigo e não pode ser refinada. Gere uma nova proposta para ativar o refino rápido.',
+  }, { status: 400 })
 
-  let novoHtml: string
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: `Você é um editor de propostas comerciais em HTML.
-Receberá uma proposta HTML existente e uma instrução de alteração.
-Faça APENAS a alteração solicitada, mantendo todo o restante idêntico.
-Retorne o HTML completo modificado, sem explicações.
-IMPORTANTE: Mantenha todos os estilos, cores e estrutura originais.`,
-      messages: [{
-        role: 'user',
-        content: `HTML ATUAL DA PROPOSTA:\n${proposta.html}\n\nINSTRUÇÃO DE ALTERAÇÃO:\n${instrucao}\n\nRetorne o HTML completo com a alteração aplicada.`
-      }]
+    const novoConteudo = await refinarConteudoProposta({
+      conteudoAtual: proposta.conteudo as ConteudoProposta,
+      instrucao,
     })
 
-    const content = response.content[0]
-    if (content.type !== 'text') return NextResponse.json({ error: 'Erro no Claude' }, { status: 500 })
-    novoHtml = content.text
+    const novoHtml = montarHtmlProposta(novoConteudo)
+
+    await supabase.from('propostas')
+      .update({ html: novoHtml, conteudo: novoConteudo })
+      .eq('id', proposta.id)
+
+    return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     const semCredito = msg.includes('credit') || msg.includes('billing') || msg.includes('quota') || msg.includes('insufficient')
@@ -48,8 +44,4 @@ IMPORTANTE: Mantenha todos os estilos, cores e estrutura originais.`,
         : `Erro ao refinar: ${msg}`,
     }, { status: 500 })
   }
-
-  await supabase.from('propostas').update({ html: novoHtml }).eq('id', proposta.id)
-
-  return NextResponse.json({ ok: true })
 }

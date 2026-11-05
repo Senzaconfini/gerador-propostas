@@ -104,7 +104,15 @@ export default function PropostaPage() {
             <Sparkles size={13} /> Refinar
             {painelAberto ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
-          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => window.print()}>
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => {
+            const iframe = document.getElementById('proposta-html') as HTMLIFrameElement | null
+            if (iframe?.contentWindow) {
+              iframe.contentWindow.focus()
+              iframe.contentWindow.print()
+            } else {
+              window.print()
+            }
+          }}>
             <Printer size={13} /> Salvar PDF
           </button>
           <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => {
@@ -168,10 +176,18 @@ export default function PropostaPage() {
 
       {/* Proposta */}
       <div style={{ paddingTop: painelAberto ? 140 : 64 }}>
-        <div
+        <iframe
           id="proposta-html"
-          dangerouslySetInnerHTML={{ __html: proposta.html }}
-          style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.4)' }}
+          srcDoc={proposta.html}
+          style={{
+            width: '100%',
+            height: 'calc(100vh - 80px)',
+            border: 'none',
+            borderRadius: 12,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+            background: '#EDE7D8',
+          }}
+          title="Proposta"
         />
       </div>
 
@@ -181,7 +197,7 @@ export default function PropostaPage() {
           .no-print { display: none !important; }
           aside { display: none !important; }
           main { margin-left: 0 !important; padding: 0 !important; }
-          #proposta-html { box-shadow: none !important; border-radius: 0 !important; }
+          #proposta-html { box-shadow: none !important; border-radius: 0 !important; height: auto !important; }
         }
       `}</style>
     </>
