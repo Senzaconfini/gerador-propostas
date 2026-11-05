@@ -185,7 +185,7 @@ export default function PropostaPage() {
             border: 'none',
             borderRadius: 12,
             boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-            background: '#EDE7D8',
+            background: '#1A1D1A',
           }}
           title="Proposta"
         />
